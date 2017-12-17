@@ -1,0 +1,520 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core.dll" #>
+<#@ import namespace="System.Linq" #>
+<#@ output extension=".cs" #>
+
+/* 
+	This files has been generated from RTuple.tt T4 template. 
+	Do not change it, change the template if you want your changes to be persistent. 
+*/
+
+using System;
+using System.Collections.Generic;
+
+namespace Indigo.CrossCutting.Utilities.Collections
+{
+	#region RTuple helper class
+
+	/// <summary>RTuple helper class. Makes creating tuples easier thanks to type inference (can't do the same with constuctor).</summary>
+	public static class RTuple
+	{
+	
+<#
+for (int fieldCount = 2; fieldCount <= 9; fieldCount++) { 
+	int[] idx = new int[fieldCount];
+	for (int i = 0; i < fieldCount; i++) idx[i] = i + 1;
+	Func<string, string, string> Join 
+		= (separator, pattern) => string.Join(separator, idx.Select(i => string.Format(pattern, i)));
+	var types = Join(", ", "TField{0}");
+	var flist = Join(", ", "Item{0}");
+#>
+		/// <summary>Makes the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the field <#= i #>.</typeparam>
+		/// <param name="item<#= i #>">The value <#= i #>.</param>
+<# } #>
+		/// <returns>New tuple.</returns>
+		public static RTuple<#= "<" + types + ">" #> 
+			Make<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			TField<#= i #> item<#= i #> = default(TField<#= i #>)<#= i == fieldCount ? ")" : "," #>
+<# } #>
+		{
+			return new RTuple<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+				item<#= i #><#= i == fieldCount ? ");" : "," #>
+<# } #>
+		}
+		
+		/// <summary>Clones the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the field <#= i #>.</typeparam>
+<# } #>
+		/// <returns>New tuple.</returns>
+		public static RTuple<#= "<" + types + ">" #> 
+			Clone<#= "<" + types + ">" #>(
+			this RTuple<#= "<" + types + ">" #> other)
+		{
+			return new RTuple<#= "<" + types + ">" #>(other);
+		}
+		
+<# } #>
+	}
+	
+	#endregion
+	
+	#region VTuple helper class
+
+	/// <summary>VTuple helper class. Makes creting tuples easier thanks to type inference (can't do the same with constuctor).</summary>
+	public static class VTuple
+	{
+	
+<#
+for (int fieldCount = 2; fieldCount <= 9; fieldCount++) { 
+	int[] idx = new int[fieldCount];
+	for (int i = 0; i < fieldCount; i++) idx[i] = i + 1;
+	Func<string, string, string> Join 
+		= (separator, pattern) => string.Join(separator, idx.Select(i => string.Format(pattern, i)));
+	var types = Join(", ", "TField{0}");
+	var flist = Join(", ", "Item{0}");
+#>
+		/// <summary>Makes the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the field <#= i #>.</typeparam>
+		/// <param name="item<#= i #>">The value <#= i #>.</param>
+<# } #>
+		/// <returns>New tuple.</returns>
+		public static VTuple<#= "<" + types + ">" #> 
+			Make<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			TField<#= i #> item<#= i #> = default(TField<#= i #>)<#= i == fieldCount ? ")" : "," #>
+<# } #>
+		{
+			return new VTuple<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+				item<#= i #><#= i == fieldCount ? ");" : "," #>
+<# } #>
+		}
+		
+		/// <summary>Clones the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the field <#= i #>.</typeparam>
+<# } #>
+		/// <returns>New tuple.</returns>
+		public static VTuple<#= "<" + types + ">" #> 
+			Clone<#= "<" + types + ">" #>(
+			ITuple<#= "<" + types + ">" #> other)
+		{
+			return new VTuple<#= "<" + types + ">" #>(other);
+		}
+		
+<# } #>
+	}
+	
+	#endregion
+<#
+for (int fieldCount = 2; fieldCount <= 9; fieldCount++) { 
+	int[] idx = new int[fieldCount];
+	for (int i = 0; i < fieldCount; i++) idx[i] = i + 1;
+	Func<string, string, string> Join 
+		= (separator, pattern) => string.Join(separator, idx.Select(i => string.Format(pattern, i)));
+	var types = Join(", ", "TField{0}");
+	var flist = Join(", ", "Item{0}");
+#>
+
+	#region ITuple<#= "<" + types + ">" #>
+
+	/// <summary>
+	/// Tuple which handles Equals and GetHashCode properly.
+	/// </summary>
+<# foreach (var i in idx) { #>
+	/// <typeparam name="TField<#= i #>">The type of field <#= i #>.</typeparam>
+<# } #>
+	public interface ITuple<#= "<" + types + ">" #>: 
+		IEquatable<ITuple<#= "<" + types + ">" #>>,
+		IComparable<ITuple<#= "<" + types + ">" #>>
+	{
+		#region properties
+
+<# foreach (var i in idx) { #>
+		/// <summary>Gets or sets the item <#= i #>.</summary>
+		/// <value>The item <#= i #>.</value>
+		TField<#= i #> Item<#= i #> { get; set; }
+<# } #>
+
+		#endregion
+	}
+	
+	#endregion
+
+	#region RTuple<#= "<" + types + ">" #>
+
+	/// <summary>
+	/// Tuple which handles Equals and GetHashCode properly.
+	/// Please note, that RTuple is a class and has all the advantages and disadvantages of a class.
+	/// </summary>
+<# foreach (var i in idx) { #>
+	/// <typeparam name="TField<#= i #>">The type of field <#= i #>.</typeparam>
+<# } #>
+	public class RTuple<#= "<" + types + ">" #>: 
+		ITuple<#= "<" + types + ">" #>,
+		IComparable<RTuple<#= "<" + types + ">" #>>,
+		IComparable<VTuple<#= "<" + types + ">" #>>,
+		IEquatable<RTuple<#= "<" + types + ">" #>>,
+		IEquatable<VTuple<#= "<" + types + ">" #>>
+	{
+		#region properties
+
+<# foreach (var i in idx) { #>
+		/// <summary>Gets or sets the item <#= i #>.</summary>
+		/// <value>The item <#= i #>.</value>
+		public TField<#= i #> Item<#= i #> { get; set; }
+<# } #>
+
+		#endregion
+		
+		#region constructor
+
+		/// <summary>Initializes a new instance of the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <param name="item<#= i #>">The item <#= i #>.</param>
+<# } #>
+		public RTuple(
+<# foreach (var i in idx) { #>
+			TField<#= i #> item<#= i #> = default(TField<#= i #>)<#= i == fieldCount ? ")" : "," #>
+<# } #>
+		{
+<# foreach (var i in idx) { #>
+			Item<#= i #> = item<#= i #>;
+<# } #>
+		}
+		
+		/// <summary>Initializes a new instance of the tuple.</summary>
+		/// <param name="other">The other tuple.</param>
+		public RTuple(ITuple<#= "<" + types + ">" #> other)
+		{
+<# foreach (var i in idx) { #>
+			Item<#= i #> = other.Item<#= i #>;
+<# } #>
+		}
+
+		#endregion
+		
+		#region overrides
+
+		/// <summary>Determines whether the specified <see cref="System.Object"/> is equal to this instance.</summary>
+		/// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
+		/// <returns><c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+		public override bool Equals(object obj)
+		{
+			return Equals(obj as ITuple<#= "<" + types + ">" #>);
+		}
+
+		/// <summary>Returns a hash code for this instance.</summary>
+		/// <returns>A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.</returns>
+		public override int GetHashCode()
+		{
+			return HashCode.Hash(<#= flist #>);
+		}
+		
+		/// <summary>Returns a <see cref="System.String"/> that represents this instance.</summary>
+		/// <returns>A <see cref="System.String"/> that represents this instance.</returns>
+		public override string ToString()
+		{
+			var csv = "<# foreach (var j in idx) { #>{<#= j - 1 #>}<#= j == fieldCount ? "" : "," #><# } #>";
+			return string.Format(
+				"RTuple<{0}>({1})",
+				string.Format(csv, 
+<# foreach (var j in idx) { #>
+					typeof(TField<#= j #>).Name<#= j == fieldCount ? ")," : "," #>
+<# } #>
+				string.Format(csv,
+<# foreach (var j in idx) { #>
+					object.ReferenceEquals(Item<#= j #>, null) ? "null" : Item<#= j #>.ToString()<#= j == fieldCount ? "));" : "," #>
+<# } #>
+		}
+
+		#endregion
+		
+		#region IEquatable Members
+
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(ITuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+		
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(RTuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(VTuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+		
+		#endregion
+		
+		#region IComparable Members
+
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(ITuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+		
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(RTuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(VTuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+
+		#endregion
+	}
+	
+	#endregion
+	
+	#region VTuple<#= "<" + types + ">" #>
+
+	/// <summary>
+	/// Tuple which handles Equals and GetHashCode properly. 
+	/// Please note, that VTuple is a struct and has all the advantages and disadvantages of a struct.
+	/// </summary>
+<# foreach (var i in idx) { #>
+	/// <typeparam name="TField<#= i #>">The type of field <#= i #>.</typeparam>
+<# } #>
+	public struct VTuple<#= "<" + types + ">" #>: 
+		ITuple<#= "<" + types + ">" #>,
+		IComparable<RTuple<#= "<" + types + ">" #>>,
+		IComparable<VTuple<#= "<" + types + ">" #>>,
+		IEquatable<RTuple<#= "<" + types + ">" #>>,
+		IEquatable<VTuple<#= "<" + types + ">" #>>
+	{
+		#region properties
+
+<# foreach (var i in idx) { #>
+		/// <summary>Gets or sets the item <#= i #>.</summary>
+		/// <value>The item <#= i #>.</value>
+		public TField<#= i #> Item<#= i #> { get; set; }
+<# } #>
+
+		#endregion
+		
+		#region constructor
+
+		/// <summary>Initializes a new instance of the tuple.</summary>
+<# foreach (var i in idx) { #>
+		/// <param name="item<#= i #>">The item <#= i #>.</param>
+<# } #>
+		public VTuple(
+<# foreach (var i in idx) { #>
+			TField<#= i #> item<#= i #> = default(TField<#= i #>)<#= i == fieldCount ? ")" : "," #>
+<# } #>
+			: this()
+		{
+<# foreach (var i in idx) { #>
+			Item<#= i #> = item<#= i #>;
+<# } #>
+		}
+		
+		/// <summary>Initializes a new instance of the tuple.</summary>
+		/// <param name="other">The other tuple.</param>
+		public VTuple(ITuple<#= "<" + types + ">" #> other)
+			: this()
+		{
+<# foreach (var i in idx) { #>
+			Item<#= i #> = other.Item<#= i #>;
+<# } #>
+		}
+
+		#endregion
+		
+		#region overrides
+
+		/// <summary>Determines whether the specified <see cref="System.Object"/> is equal to this instance.</summary>
+		/// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
+		/// <returns><c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+		public override bool Equals(object obj)
+		{
+			return Equals(obj as ITuple<#= "<" + types + ">" #>);
+		}
+
+		/// <summary>Returns a hash code for this instance.</summary>
+		/// <returns>A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.</returns>
+		public override int GetHashCode()
+		{
+			return HashCode.Hash(<#= flist #>);
+		}
+		
+		/// <summary>Returns a <see cref="System.String"/> that represents this instance.</summary>
+		/// <returns>A <see cref="System.String"/> that represents this instance.</returns>
+		public override string ToString()
+		{
+			var csv = "<# foreach (var j in idx) { #>{<#= j - 1 #>}<#= j == fieldCount ? "" : "," #><# } #>";
+			return string.Format(
+				"VTuple<{0}>({1})",
+				string.Format(csv, 
+<# foreach (var j in idx) { #>
+					typeof(TField<#= j #>).Name<#= j == fieldCount ? ")," : "," #>
+<# } #>
+				string.Format(csv,
+<# foreach (var j in idx) { #>
+					object.ReferenceEquals(Item<#= j #>, null) ? "null" : Item<#= j #>.ToString()<#= j == fieldCount ? "));" : "," #>
+<# } #>
+		}
+
+		#endregion
+		
+		#region IEquatable Members
+
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(ITuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+		
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(RTuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+
+		/// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+		public bool Equals(VTuple<#= "<" + types + ">" #> other)
+		{
+			if (object.ReferenceEquals(other, null)) return false;
+			if (object.ReferenceEquals(other, this)) return true;
+
+			return
+<# foreach (var i in idx) { #>
+				Item<#= i #>.Equals(other.Item<#= i #>)<#= i == fieldCount ? ";" : " &&" #>
+<# } #>
+		}
+		
+		#endregion
+		
+		#region IComparable Members
+
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(ITuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+		
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(RTuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+
+		/// <summary>Compares the current object with another object of the same type.</summary>
+		/// <param name="other">An object to compare with this object.</param>
+		/// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the other parameter.Zero This object is equal to other. Greater than zero This object is greater than other.</returns>
+		public int CompareTo(VTuple<#= "<" + types + ">" #> other)
+		{
+			int c;
+			if (object.ReferenceEquals(other, null)) return 1;
+			if (object.ReferenceEquals(other, this)) return 0;
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(Item<#= i #>, other.Item<#= i #>)) != 0) return c;
+<# } #>
+			return 0;
+		}
+
+		#endregion
+	}
+	
+	#endregion
+<# } #>
+}

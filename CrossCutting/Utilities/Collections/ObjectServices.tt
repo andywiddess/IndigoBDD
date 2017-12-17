@@ -1,0 +1,237 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core.dll" #>
+<#@ import namespace="System.Linq" #>
+<#@ output extension=".cs" #>
+
+/* 
+	This files has been generated from ObjectServices.tt T4 template. 
+	Do not change it, change the template if you want your changes to be persistent.
+*/
+
+using System;
+using System.Collections.Generic;
+
+namespace Indigo.CrossCutting.Utilities.Collections
+{
+	/// <summary>Helper class to construct ad hoc comparison functions.</summary>
+	/// <typeparam name="T">Type of item to compare</typeparam>
+	public class ObjectServices<T>
+	{
+		#region fields
+	
+		private Func<T, T, bool> m_Equality;
+		private Func<T, object, bool> m_EqualityAny;
+		private Func<T, int> m_HashCode;
+		private Comparison<T> m_Comparision;
+		
+		#endregion
+		
+		#region properties
+
+		/// <summary>Equality function.</summary>
+		public Func<T, T, bool> Equality { get { return m_Equality; } }
+
+		/// <summary>Equality function (for uknown object)</summary>
+		public Func<T, object, bool> EqualityToAny { get { return m_EqualityAny; } }
+
+		/// <summary>Comparison function.</summary>
+		public Comparison<T> Comparision { get { return m_Comparision; } }
+
+		/// <summary>Hash function.</summary>
+		public Func<T, int> Hasher { get { return m_HashCode; } }
+		
+		#endregion
+		
+		#region constructor
+		
+		private ObjectServices()
+		{
+		}
+		
+		#endregion
+	
+<# 
+for (int fieldCount = 1; fieldCount <= 9; fieldCount++) { 
+	int[] idx = new int[fieldCount];
+	for (int i = 0; i < fieldCount; i++) idx[i] = i + 1;
+	Func<string, string, string> Join 
+		= (separator, pattern) => string.Join(separator, idx.Select(i => string.Format(pattern, i)));
+	var types = Join(", ", "TField{0}");
+	var flist = Join(", ", "fun{0}");
+#>
+		#region Services for <#= "<" + types + ">" #>
+		
+		/// <summary>Compares composite objects.</summary>
+		/// <param name="that">The this object.</param>
+		/// <param name="other">The other object.</param>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>Result of comparision.</returns>
+		public static int CompareComposite<#= "<" + types + ">" #>(
+			T that, T other, 
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			if (object.ReferenceEquals(that, other)) return 0;
+			if (object.ReferenceEquals(that, null)) return -1;
+			if (object.ReferenceEquals(other, null)) return 1;
+
+			int c; // = 0; 
+<# foreach (var i in idx) { #>
+			if ((c = Comparer<TField<#= i #>>.Default.Compare(fun<#= i #>(that), fun<#= i #>(other))) != 0) return c;
+<# } #>
+
+			return 0;
+		}
+
+		/// <summary>Composes comparision function.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>The comparison function.</returns>
+		public static Comparison<T> CompositeComparison<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			return (a, b) => CompareComposite(a, b, <#= flist #>);
+		}
+
+		/// <summary>Compares composite objects.</summary>
+		/// <param name="that">The this object.</param>
+		/// <param name="other">The other object.</param>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>Result of comparision.</returns>
+		public static bool EqualsComposite<#= "<" + types + ">" #>(
+			T that, T other,
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			if (object.ReferenceEquals(that, other)) return true;
+			if (object.ReferenceEquals(that, null)) return false;
+			if (object.ReferenceEquals(other, null)) return false;
+			
+<# foreach (var i in idx) { #>
+			if (!EqualityComparer<TField<#= i #>>.Default.Equals(fun<#= i #>(that), fun<#= i #>(other))) return false;
+<# } #>
+			return true;
+		}
+		
+		/// <summary>Composes equality function.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>The comparison function.</returns>
+		public static Func<T, T, bool> CompositeEquality<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			return (a, b) => EqualsComposite(a, b, <#= flist #>);
+		}
+
+		/// <summary>Compares composite objects.</summary>
+		/// <param name="that">The this object.</param>
+		/// <param name="any">The other object (of unkown type).</param>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>Result of comparision.</returns>
+		public static bool EqualsCompositeToAny<#= "<" + types + ">" #>(
+			T that, object any,
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			if (object.ReferenceEquals(that, any)) return true;
+			if (object.ReferenceEquals(that, null)) return false;
+			if (object.ReferenceEquals(any, null)) return false;
+			if (!(any is T)) return false;
+
+			var other = (T)any; // can't use 'as', because it requires 'class' (and it may be a 'struct')
+<# foreach (var i in idx) { #>
+			if (!EqualityComparer<TField<#= i #>>.Default.Equals(fun<#= i #>(that), fun<#= i #>(other))) return false;
+<# } #>
+			return true;
+		}
+		
+		/// <summary>Composes equality function.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>The comparison function.</returns>
+		public static Func<T, object, bool> CompositeEqualityToAny<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			return (a, b) => EqualsCompositeToAny(a, b, <#= flist #>);
+		}
+		
+		/// <summary>Hashes the composite object.</summary>
+		/// <param name="that">The that.</param>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>Hash calculated for extracted expressions.</returns>
+		public static int HashComposite<#= "<" + types + ">" #>(
+			T that, 
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			if (that == null) return HashCode.Hash(that);
+			return HashCode.Hash(<#= Join(", ", "fun{0}(that)") #>);
+		}
+
+		/// <summary>Composes hash function for composite object.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>Function which calculates hash for given object.</returns>
+		public static Func<T, int> CompositeHasher<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			return (that) => HashComposite(that, <#= flist #>);
+		}
+		
+		/// <summary>Generates an object with easily accessible service functions.</summary>
+<# foreach (var i in idx) { #>
+		/// <typeparam name="TField<#= i #>">The type of the expression <#= i #>.</typeparam>
+		/// <param name="fun<#= i #>">The extractor function for expression <#= i #>.</param>
+<# } #>
+		/// <returns>An object with easily accessible service functions.</returns>
+		public static ObjectServices<T> Make<#= "<" + types + ">" #>(
+<# foreach (var i in idx) { #>
+			Func<T, TField<#= i #>> fun<#= i #><#= i == fieldCount ? string.Empty : "," #>
+<# } #>
+		) {
+			return new ObjectServices<T>
+			{
+				m_Equality = ObjectServices<T>.CompositeEquality(<#= flist #>),
+				m_Comparision = ObjectServices<T>.CompositeComparison(<#= flist #>),
+				m_EqualityAny = ObjectServices<T>.CompositeEqualityToAny(<#= flist #>),
+				m_HashCode = ObjectServices<T>.CompositeHasher(<#= flist #>)
+			};
+		}
+
+		#endregion
+
+<# } #>
+	}
+}
